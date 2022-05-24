@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlite3 import Timestamp
-from time import process_time_ns
+import math
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -20,35 +20,32 @@ def drop_invalid_lines(dataframe):
     for i in range(len(df)):
         drop = False
         try:            
-#            date = datetime.strptime(df['Time (UTC)'][i], "%Y.%m.%d %H:%M:%S")
-#            if isinstance(df['Time (UTC)'], str):
-#                drop = True
-#                print("ERROR: Time (UTC):",i)
             if not drop and not isinstance(df['Open'][i], np.float64):
-                drop = True
-                print("ERROR: Open:",i)
-            if not drop and not isinstance(df['High'][i], np.float64):
-                drop = True
-                print("ERROR: High:",i)
-            if not drop and not isinstance(df['Low'][i], np.float64):
-                drop = True
-                print("ERROR: Low:",i)
-            if not drop and not isinstance(df['Close'][i], np.float64):
-                drop = True
-                print("ERROR: Close:",i)
-            if not drop and not isinstance(eval(df['Volume'][i]), (float, int)):
-                drop = True
-                print("ERROR: Volume:",i)
-
-            if drop:
-                print("\napaguei linha",i)
-                df.drop(labels=[i,], axis=0, inplace=True)
+                df.loc[df.index[i], "Open"] = 0.0
         except Exception as e:
-#            print("ERROR: 'drop_invalid_lines' in line {}.\nThe following line will be removed:\n{}\n\nCause of the error:\n{}".format(i, df.loc[df.index[i]], e))
-            print(e)
-            df.drop(labels=[df.index[i-1],], axis=0, inplace=True)
-    
-#    print("\n\nDF\n",df)
+            df.loc[df.index[i], "Open"] = 0.0
+        try:            
+            if not drop and not isinstance(df['High'][i], np.float64):
+                df.loc[df.index[i], "High"] = 0.0
+        except Exception as e:
+            df.loc[df.index[i], "High"] = 0.0
+        try:            
+            if not drop and not isinstance(df['Low'][i], np.float64):
+                df.loc[df.index[i], "Low"] = 0.0
+        except Exception as e:
+            df.loc[df.index[i], "Low"] = 0.0
+        try:            
+            if not drop and not isinstance(df['Close'][i], np.float64):
+                df.loc[df.index[i], "Close"] = 0.0
+        except Exception as e:
+            df.loc[df.index[i], "Close"] = 0.0
+        try:            
+            if not drop and not isinstance(eval(df['Volume'][i]), (float,int)):
+                df.loc[df.index[i], "Volume"] = 0.0
+            else:
+                df.loc[df.index[i], "Volume"] = eval(df['Volume'][i])
+        except Exception as e:
+            df.loc[df.index[i], "Volume"] = 0.0
     return df
 
 
@@ -60,3 +57,25 @@ def parse_date(time_col):
     startTime = datetime(year,month,day,0,0)
     return startTime
 
+
+def print_dataframe(df):
+    for i in range(len(df)):
+        print(df.loc[df.index[i]])
+        
+        
+def sigma(df):
+    aux = {
+        'Open':[],
+        'High':[],
+        'Low':[],
+        'Close':[],
+        'Volume':[]
+    }
+    res = {}
+    for i in range(len(df)):
+        for key in aux.keys():
+            aux[key].append(((df[key][i] - df.mean(axis='index')[key])**2))
+    for key in aux.keys():
+        res[key] = math.sqrt(sum(aux[key])/len(aux[key]))
+    
+    return res

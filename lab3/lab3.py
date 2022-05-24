@@ -18,9 +18,11 @@ df = pd.read_csv(file_path, sep=',', index_col=[0], parse_dates=['Time (UTC)'], 
 #df = pd.read_csv(file_path, sep=',', usecols=columns, index_col=0, on_bad_lines='skip', parse_dates=True, infer_datetime_format=True, date_parser=custom_date_parser)
 #print(df)
 df1 = lab3_aux.drop_invalid_lines(df)
+
+#lab3_aux.print_dataframe(df1)
 #df1.set_index('Time (UTC)')
 
-print(df1)
+print(lab3_aux.sigma(df1))
 
 #x = df1['Time (UTC)']
 #y = df1[['Open','High','Low','Close','Volume']]
