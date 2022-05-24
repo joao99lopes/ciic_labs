@@ -1,9 +1,13 @@
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.neural_network import MLPClassifier
 from sklearn import preprocessing
 import pandas as pd
 import os
+
+from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import accuracy_score
+
+
 
 dir_path = os.path.join(os.getcwd(), 'lab4', 'Lab4_DataSets')
 file_name = 'WA_Fn-UseC_-Sales-Win-Loss.csv'
@@ -27,16 +31,14 @@ data = sales_data[cols]
 
 target = sales_data['Opportunity Result']
 
-#print(data.head())
-
 data_train, data_test, target_train, target_test = train_test_split(data, target, test_size=0.30, random_state=10)
 
-X = data
-y = target
 
+X = data_train
+y = target_train
 
 clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(5,2), random_state=1)
 
 clf.fit(X,y)
-
-print(clf.predict(X))
+pred = clf.predict(data_test)
+print("LAB accuracy : ",accuracy_score(target_test, pred,normalize = True))

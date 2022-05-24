@@ -34,19 +34,8 @@ target = sales_data['Opportunity Result']
 
 data_train, data_test, target_train, target_test = train_test_split(data, target, test_size=0.30, random_state=10)
 
-"""
 svc_model = LinearSVC(random_state=0)
 
 pred = svc_model.fit(data_train, target_train).predict(data_test)
 
 print("LinearSVC accuracy : ",accuracy_score(target_test, pred,normalize = True))
-"""
-
-X = data_train
-y = target_train
-
-clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(5,2), random_state=1)
-
-clf.fit(X,y)
-pred = clf.predict(data_test)
-print("LAB accuracy : ",accuracy_score(target_test, pred,normalize = True))
