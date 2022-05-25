@@ -27,11 +27,11 @@ sales_data['Supplies Group'] = le.fit_transform(sales_data['Supplies Group'])
 
 
 cols = [col for col in sales_data.columns if col not in['Opportunity Number','Opportunity Result']]
-data = sales_data[cols]
 
+data = sales_data[cols]
 target = sales_data['Opportunity Result']
 
-data_train, data_test, target_train, target_test = train_test_split(data, target, test_size=0.30, random_state=10)
+data_train, data_test, target_train, target_test = train_test_split(data, target, test_size=0.20, random_state=10)
 
 
 X = data_train
