@@ -1,11 +1,11 @@
+from cmath import nan
+from math import isnan
 from xmlrpc.client import boolean
 import pandas as pd
 from datetime import date, time
 import numpy as np
 
 col_types = {
-    "Date": date,
-    "Time": time,
     "S1Temp": np.float64,
     "S2Temp": np.float64,
     "S3Temp": np.float64,
@@ -30,54 +30,74 @@ quartile_default = {
 
 
 
-def check_missing_values(dataframe, row):
+def check_missing_values(dataframe, row_index):
     df = dataframe
-    print(df)
-    for col in col_types.keys():
+#    print(df)
+    for col in dataframe.columns:
         # if a value isn't valid (wrong type) removes row
-        if not isinstance(df[col][row].__class__, col_types[col].__class__):
-            print("Error in row",row,"in col",col,"with value",df[col][i],"\ntype should be", col_types[col])
-            df = df.drop([row])
+        if not isinstance(df[col][row_index].__class__, col_types[col].__class__):
+            print("Error in row",row_index,"in col",col,"with value",df[col][row_index],"\ntype should be", col_types[col])
+            df = df.drop([row_index])
         # if a value is missing, inserts last value
-        if isinstance(df[col][row], str) and not(df[col][row] and df[col][row].strip()) or df[col][i] == None:
-            print("Row",row,"had empty value in col", col)
-            df[col] = df[col].replace([df[col][row]],df[col][row-1])
+        if isnan(df[col][row_index]):
+            print("Row",row_index,"had empty value in col", col)
+            print(df[col][row_index],"---------------------------")
+#            df.iloc[row_index,col] = df.iloc[row_index-1,col]
+#            df.at[row_index,col]=df[col][row_index-1]
+#            df.loc[row_index,[col]] = df[col][row_index-1]
+
+            df[col].replace([df[col][row_index]], [df[col][row_index-1]], inplace=True)
+#            print(df.iloc[[row_index-1,row_index]],"\n\nlen: {}\n".format(len(df[col])))
     return df
 
 
-def remove_noise(dataframe, row):
+def remove_noise(dataframe, row_index):
     df = dataframe
-    print(df)
+#    print(df)
     for col in col_types.keys():
         # if a value isn't valid (wrong type) removes row
-        if not isinstance(df[col][row].__class__, col_types[col].__class__):
-            print("Error in row",row,"in col",col,"with value",df[col][i],"\ntype should be", col_types[col])
-            df = df.drop([row])
+        if not isinstance(df[col][row_index].__class__, col_types[col].__class__):
+            print("Error in row",row_index,"in col",col,"with value",df[col][row_index],"\ntype should be", col_types[col])
+            df = df.drop([row_index])
         # if a value is considered noise
         # CHECK IF THIS IS THE CORRECT WAY TO FIND NOISE
-        if is_noise(df[col][row], col):
+        if is_noise(df, row_index, col):
+            # do code
             break
     return df 
 
 
 def preprocessing(dataframe):
     df = dataframe
+#    populate_quartiles(df)
+    print("'{}'".format(df['S2Temp'][4571]))
+    print(df.iloc[[4571]])
+
     for i in range(len(df)):
-        df = check_missing_values(dataframe=df, row=i)
+        df = check_missing_values(dataframe=df, row_index=i)
     return df
 
 
-def is_noise(row_content, col_type):
-    if "PIR" in col and row_content not in (0,1):
+def is_noise(dataframe, row_index, col_type):
+    if "PIR" in col_type and dataframe[col_type][row_index] not in (0,1):
         return True
-    
+    elif dataframe[col_type][row_index] < 0:
+        return True
     return False
 
 
 def is_outlier(value, col):
+    #1.5*(q3-q1)
     return
 
-def populate_quartiles(df):
-    for col in col_types.keys():
-        col_quartiles[col] = quartile_default
+def populate_quartiles(dataframe):
+    for col in dataframe.columns:
+        aux = quartile_default
+        aux["min"] = min(dataframe[col])
+        aux["q1"] = dataframe[col].quantile(0.25)
+        aux["mean"] = dataframe[col].quantile(0.5)
+        aux["q3"] = dataframe[col].quantile(0.75)
+        aux["max"] = max(dataframe[col])
+        col_quartiles[col] = aux
+        print(col, aux)
     return
