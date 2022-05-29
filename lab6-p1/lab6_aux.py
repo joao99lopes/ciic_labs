@@ -67,23 +67,27 @@ def remove_noise(dataframe):
 def clean_outliers(dataframe):
     df = dataframe
     row_index = 0
-    outlier_count = {}
-    outlier_count_total = 0
+#    outlier_count = {}
+    outlier_count = []
+#    outlier_count_total = 0
     cols = [col for col in df.columns if col in["S1Temp","S3Temp","S1Light","S3Light"]]
     
     print("PRE-len",len(df))
     while row_index < len(df):
         for col in cols:
             if is_outlier(df, row_index, col):
-                if (col not in outlier_count.keys()):
-                    outlier_count[col] = 0
-                outlier_count[col] +=1
-                outlier_count_total +=1
+#                if (col not in outlier_count.keys()):
+#                    outlier_count[col] = 0
+                if (row_index not in outlier_count):
+                   outlier_count.append(row_index)
+#                outlier_count[col] +=1
+#                outlier_count_total +=1
 #                df.drop([df.index[row_index]],inplace=True)
 #                row_index-=1
         row_index+=1
     print("POS-len",len(df))
-    print("outliers:\n{}\nTOTAL: {}".format(outlier_count,outlier_count_total))
+#    print("outliers:\n{}\nTOTAL: {}".format(outlier_count,outlier_count_total))
+    print("outliers:\n{}".format(len(outlier_count)))
 
     return df
 
