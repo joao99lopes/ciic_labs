@@ -1,4 +1,5 @@
 from cmath import nan
+from functools import total_ordering
 from math import isnan
 from xmlrpc.client import boolean
 import pandas as pd
@@ -66,20 +67,23 @@ def remove_noise(dataframe):
 def clean_outliers(dataframe):
     df = dataframe
     row_index = 0
-    outlier_count = 0
+    outlier_count = {}
+    outlier_count_total = 0
     cols = [col for col in df.columns if col in["S1Temp","S3Temp","S1Light","S3Light"]]
     
     print("PRE-len",len(df))
     while row_index < len(df):
         for col in cols:
             if is_outlier(df, row_index, col):
-                outlier_count+=1
-                print("Outlier detected in row {}, col {} with value {}".format(row_index,col,df[col][row_index]))
-                df.drop([df.index[row_index]],inplace=True)
-                row_index-=1
+                if (col not in outlier_count.keys()):
+                    outlier_count[col] = 0
+                outlier_count[col] +=1
+                outlier_count_total +=1
+#                df.drop([df.index[row_index]],inplace=True)
+#                row_index-=1
         row_index+=1
     print("POS-len",len(df))
-    print("count",outlier_count)
+    print("outliers:\n{}\nTOTAL: {}".format(outlier_count,outlier_count_total))
 
     return df
 
@@ -97,6 +101,16 @@ def is_noise(dataframe, row_index, col_type):
 
 
 def is_outlier(dataframe, row_index, col):
+    value = dataframe[col][row_index]
+    q1 = col_quartiles[col]["q1"]
+    q3 = col_quartiles[col]["q3"]
+    outlier_limitation = 1.5
+    lower_limit = q1/outlier_limitation
+    upper_limit = q3/(1/outlier_limitation)
+
+    if value < lower_limit or value > upper_limit:
+        print("Outlier detected col {} value {} upper {} lower {}".format(col,value,upper_limit,lower_limit))
+        return True
     return False
 
 
