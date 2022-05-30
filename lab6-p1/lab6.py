@@ -10,5 +10,5 @@ file_path = os.path.join(dir_path, file_name)
 dataset = pd.read_csv(file_path, sep=',', index_col=[0,1])
 
 #print(dataset)
-lab6_aux.preprocessing(dataset)
+df = lab6_aux.preprocessing(dataset)
 #lab6_aux.check_missing_values(dataset)

@@ -31,11 +31,12 @@ def preprocessing(dataframe):
     df = check_missing_values(dataframe=df)
     df = remove_noise(df)
     populate_quartiles(df)
-    
     df = clean_outliers(df)
+    
     for col in df.columns:
+        print(col,col_quartiles[col])
         df[col].plot()
-        plt.ylabel(col)
+        plt.ylabel("final - " + col)
 #        plt.show()
     return df
 
@@ -67,27 +68,22 @@ def remove_noise(dataframe):
 def clean_outliers(dataframe):
     df = dataframe
     row_index = 0
-#    outlier_count = {}
-    outlier_count = []
-#    outlier_count_total = 0
-    cols = [col for col in df.columns if col in["S1Temp","S3Temp","S1Light","S3Light"]]
-    
-    print("PRE-len",len(df))
+    outlier_count = 0
+    cols = [col for col in df.columns if col in ["S1Temp","S1Light","S3Light"]]
+    initlen = len(df)
     while row_index < len(df):
         for col in cols:
             if is_outlier(df, row_index, col):
-#                if (col not in outlier_count.keys()):
-#                    outlier_count[col] = 0
-                if (row_index not in outlier_count):
-                   outlier_count.append(row_index)
-#                outlier_count[col] +=1
-#                outlier_count_total +=1
 #                df.drop([df.index[row_index]],inplace=True)
-#                row_index-=1
+                df[col] = df[col].replace([df[col][row_index]],df[col][row_index-1])
+                outlier_count +=1
+                row_index-=1
+                populate_quartiles(df)
+                break
         row_index+=1
-    print("POS-len",len(df))
+    print("PRE-len",initlen,"POS-len",len(df),"diff",initlen-len(df))
 #    print("outliers:\n{}\nTOTAL: {}".format(outlier_count,outlier_count_total))
-    print("outliers:\n{}".format(len(outlier_count)))
+    print("outliers:\n{}".format(outlier_count))
 
     return df
 
@@ -110,10 +106,10 @@ def is_outlier(dataframe, row_index, col):
     q3 = col_quartiles[col]["q3"]
     outlier_limitation = 1.5
     lower_limit = q1/outlier_limitation
-    upper_limit = q3/(1/outlier_limitation)
+    upper_limit = q3/(1/outlier_limitation) # multiplying was raising an error
 
     if value < lower_limit or value > upper_limit:
-        print("Outlier detected col {} value {} upper {} lower {}".format(col,value,upper_limit,lower_limit))
+        print("Outlier detected row {} col {} value {} upper {} lower {}".format(row_index,col,value,upper_limit,lower_limit))
         return True
     return False
 
