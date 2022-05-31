@@ -26,30 +26,17 @@ col_types = {
 col_quartiles = {}
 
 
-def preprocessing(dataframe):
-    df = dataframe
-    populate_quartiles(df)
-#    for col in col_quartiles.keys():
-#        print(col,"\n",col_quartiles[col])
-    df = check_missing_values(dataframe=df)
+def pre_processing(dataframe):
+    df = check_missing_values(dataframe)
     df = remove_noise(df)
     populate_quartiles(df)
     df = clean_outliers(df)
-    populate_quartiles(df)
-#    df_normalized_z = z_score_normalization(df)
-    df_normalized_min_max = min_max_normalization(df)
-    for col in df.columns:
-        df_normalized_min_max[col].plot()
-        plt.ylabel(col)
-        plt.xlabel("min-max")
-        plt.show()
-#        df_normalized_z[col].plot()
-#        plt.ylabel(col)
-#        plt.xlabel("z-score")
-#        plt.show()
     return df
 
 
+####################
+# NOME DA CAIXINHA #
+####################
 
 def check_missing_values(dataframe):
     # fill missing values with last valid value
@@ -62,10 +49,6 @@ def remove_noise(dataframe):
     row_index=0    
     while (row_index < len(df)):
         for col in col_types.keys():
-            # if a value isn't valid (wrong type) removes row
-            if not isinstance(df[col][row_index].__class__, col_types[col].__class__):
-                print("Error in row",row_index,"in col",col,"with value",df[col][row_index],"\ntype should be", col_types[col])
-                df = df.drop([row_index])
             # if a value is considered noise (negative value) its row is removed
             if is_noise(df, row_index, col):
                 df.drop([df.index[row_index]],inplace=True)
@@ -120,13 +103,17 @@ def min_max_normalization(dataframe):
 
 
 
-###
-# AUX functions
-##
+#################
+# AUX functions #
+#################
 
 def is_noise(dataframe, row_index, col_type):
+    # if a value isn't valid (wrong type) removes row
+    if not isinstance(dataframe[col_type][row_index].__class__, col_types[col_type].__class__):
+        print("Noise detected! Cause: invalid type in row {} col {}".format(row_index,col_type))
+        return True
     # if PIR is not a binary value
-    if "PIR" in col_type and dataframe[col_type][row_index] not in (0,1):
+    elif "PIR" in col_type and dataframe[col_type][row_index] not in (0,1):
         print("Noise detected! Cause: invalid PIR value in row {} ".format(row_index))
         return True
     # if a value is negative
@@ -148,7 +135,7 @@ def is_outlier(dataframe, row_index, col):
     lower_limit = q1/outlier_limitation
     upper_limit = q3/(1/outlier_limitation) # multiplying was raising an error
     if value < lower_limit or value > upper_limit:
-        print("{} Outlier detected row {} col {} value {} upper {} lower {}".format(outlier_limitation,row_index,col,value,upper_limit,lower_limit))
+        print("Outlier detected row {} col {} value {} upper {} lower {}".format(row_index,col,value,upper_limit,lower_limit))
         return True
     return False
 
