@@ -1,3 +1,4 @@
+from cProfile import label
 from cmath import nan
 from functools import total_ordering
 from math import isnan
@@ -35,16 +36,17 @@ def preprocessing(dataframe):
     populate_quartiles(df)
     df = clean_outliers(df)
     populate_quartiles(df)
-    df_normalized = z_score_normalization(df)
+#    df_normalized_z = z_score_normalization(df)
+    df_normalized_min_max = min_max_normalization(df)
     for col in df.columns:
-#        print(col,col_quartiles[col])
-#        draw_graph(df,col)
-        df[col].plot()
-        plt.ylabel("final - " + col)
+        df_normalized_min_max[col].plot()
+        plt.ylabel(col)
+        plt.xlabel("min-max")
         plt.show()
-        df_normalized[col].plot()
-        plt.ylabel("normal - " + col)
-        plt.show()
+#        df_normalized_z[col].plot()
+#        plt.ylabel(col)
+#        plt.xlabel("z-score")
+#        plt.show()
     return df
 
 
@@ -77,42 +79,43 @@ def clean_outliers(dataframe):
     row_index = 0
     outlier_count = 0
     outlier_rows = []
-    cols = [col for col in df.columns if col in ["S1Temp","S1Light","S3Light"]]
+    cols = ["S1Temp","S1Light","S3Light"]
     initlen = len(df)
     last_valid_value = {}
     while row_index < len(df):
         for col in cols:
             if is_outlier(df, row_index, col):
-#                df.drop([df.index[row_index]],inplace=True)
-#                df[col] = df[col].replace([df[col][row_index]],df[col][row_index-1])
-#                df.iloc[row_index, df.columns.get_loc(col)] = df.iloc[row_index-1, df.columns.get_loc(col)]
-                if col not in last_valid_value.keys():
-                    df.iloc[row_index, df.columns.get_loc(col)] = col_quartiles[col]['mean']
-                else:
-                    df.iloc[row_index, df.columns.get_loc(col)] = last_valid_value[col]
+                df.drop([df.index[row_index]],inplace=True)
                 if row_index not in outlier_rows:
                     outlier_rows.append(row_index)
                 outlier_count +=1
-#                row_index-=1
                 populate_quartiles(df)
+                row_index-=1
             else:
                 last_valid_value[col] = df[col][row_index]
         row_index+=1
-    print("PRE-len",initlen,"POS-len",len(df),"diff",initlen-len(df))
-#    print("outliers:\n{}\nTOTAL: {}".format(outlier_count,outlier_count_total))
-    print("outliers:\n{}total: {}".format(outlier_count,len(outlier_rows)))
-
+    print("outliers: {} total: {}".format(outlier_count,len(outlier_rows)))
     return df
 
 
 def z_score_normalization(dataframe):
     df = dataframe
-    
+    cols = [col for col in df.columns if col not in ["PIR1","PIR2","Persons"]]
     for row in range(len(df)):
-        for col in df.columns:
+        for col in cols:
+            # z_score = (x-mean)/std
             z_score_value = (df[col][row] - col_quartiles[col]["mean"])/col_quartiles[col]["std"]
             df.iloc[row, df.columns.get_loc(col)] = z_score_value
+    return df
 
+def min_max_normalization(dataframe):
+    df = dataframe
+    cols = [col for col in df.columns if col not in ["PIR1","PIR2","Persons"]]
+    for row in range(len(df)):
+        for col in cols:
+            # min_max = (x-min)/(max-min)
+            min_max = (df[col][row] - col_quartiles[col]["min"])/(col_quartiles[col]["max"] - col_quartiles[col]["min"])
+            df.iloc[row, df.columns.get_loc(col)] = min_max
     return df
 
 
@@ -122,9 +125,17 @@ def z_score_normalization(dataframe):
 ##
 
 def is_noise(dataframe, row_index, col_type):
+    # if PIR is not a binary value
     if "PIR" in col_type and dataframe[col_type][row_index] not in (0,1):
+        print("Noise detected! Cause: invalid PIR value in row {} ".format(row_index))
         return True
+    # if a value is negative
     elif dataframe[col_type][row_index] < 0:
+        print("Noise detected! Cause: negative value in row {} col {}".format(row_index,col_type))
+        return True
+    # if movement is detected and the room is empty (ghostbusters!)
+    elif "PIR" in col_type and dataframe[col_type][row_index] == 1 and dataframe["Persons"][row_index] == 0:
+        print("Noise detected! Cause: movement detected in empty room in row {} ".format(row_index))
         return True
     return False
 
@@ -133,12 +144,11 @@ def is_outlier(dataframe, row_index, col):
     value = dataframe[col][row_index]
     q1 = col_quartiles[col]["q1"]
     q3 = col_quartiles[col]["q3"]
-    outlier_limitation = 1.5
+    outlier_limitation = 20
     lower_limit = q1/outlier_limitation
     upper_limit = q3/(1/outlier_limitation) # multiplying was raising an error
-
     if value < lower_limit or value > upper_limit:
-        print("Outlier detected row {} col {} value {} upper {} lower {}".format(row_index,col,value,upper_limit,lower_limit))
+        print("{} Outlier detected row {} col {} value {} upper {} lower {}".format(outlier_limitation,row_index,col,value,upper_limit,lower_limit))
         return True
     return False
 
@@ -157,7 +167,7 @@ def populate_quartiles(dataframe):
     return
 
 
-def draw_graph(dataframe,col):
+def draw_density_graph(dataframe,col):
     res = {}
     for row in range(len(dataframe)):
         if dataframe[col][row] not in res.keys():
