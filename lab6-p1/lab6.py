@@ -57,7 +57,7 @@ visualizer.score(data_validation,target_validation)
 g = visualizer.poof()
 
 # KNeighborsClassifier
-visualizer = ClassificationReport(gnb,classes=["0 Persons","1 Persons","2 Persons","3 Persons"])
+visualizer = ClassificationReport(neigh,classes=["0 Persons","1 Persons","2 Persons","3 Persons"])
 visualizer.fit(data_train,target_train)
 visualizer.score(data_validation,target_validation)
 g = visualizer.poof()
