@@ -31,9 +31,19 @@ def pre_processing(dataframe):
     df = remove_noise(df)
     populate_quartiles(df)
     df = clean_outliers(df)
+    df = min_max_normalization(df)
     return df
 
 
+def add_binary_result(dataframe):
+    above_limit = []
+    for row in range(len(dataframe)):
+        if dataframe['Persons'][row] > 2:
+            above_limit.append(1)
+        else:
+            above_limit.append(0)
+    dataframe["AboveLimit"] = above_limit
+    return dataframe
 ####################
 # NOME DA CAIXINHA #
 ####################
@@ -166,3 +176,13 @@ def draw_density_graph(dataframe,col):
     plt.ylabel(col)
     plt.show()
             
+
+def draw_graph(dataframe, split=False):
+    if split:
+        for col in dataframe.columns:
+            dataframe[col].plot()
+            plt.ylabel(col)
+            plt.show()
+    else:
+        dataframe.plot()
+        plt.show()
