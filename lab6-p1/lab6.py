@@ -1,6 +1,7 @@
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.neural_network import MLPClassifier
+from yellowbrick.classifier import ClassificationReport
 import pandas as pd
 import os
 
@@ -31,9 +32,22 @@ data_train, data_validation, target_train, target_validation = train_test_split(
 # lbfgs
 clf = MLPClassifier(activation='logistic', random_state=1, solver='lbfgs')
 pred = clf.fit(data_train,target_train).predict(data_validation)
-print("PROB lbfgs:",accuracy_score(pred,target_validation))
+print("PROB lbfgs:",accuracy_score(target_validation,pred))
+visualizer = ClassificationReport(clf,support=True)
+visualizer.fit(data_train, target_train) # Fit the training data to the
+visualizer.score(data_validation, target_validation)
+g = visualizer.poof()
+
+
 # sgd
-clf = MLPClassifier(activation='logistic', random_state=1, solver='sgd')
+#clf = MLPClassifier(activation='logistic', random_state=1, solver='sgd')
+#pred = clf.fit(data_train,target_train).predict(data_validation)
+#print("PROB sgd:",accuracy_score(target_validation,pred))
+#visualizer = ClassificationReport(clf)
+#visualizer.fit(data_train, target_train) # Fit the training data to the
+#visualizer.score(data_validation, target_validation)
+#g= visualizer.poof()
+
 
 #####################
 # Amount of Persons #
