@@ -32,6 +32,7 @@ def pre_processing(dataframe):
     populate_quartiles(df)
     df = clean_outliers(df)
     df = min_max_normalization(df)
+    df = add_binary_result(df)
     return df
 
 
@@ -44,6 +45,8 @@ def add_binary_result(dataframe):
             above_limit.append(0)
     dataframe["AboveLimit"] = above_limit
     return dataframe
+
+
 ####################
 # NOME DA CAIXINHA #
 ####################

@@ -1,5 +1,6 @@
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.neural_network import MLPClassifier
 import pandas as pd
 import os
 
@@ -13,14 +14,40 @@ dataset = pd.read_csv(file_path, sep=',', index_col=[0,1])
 
 df = lab6_aux.pre_processing(dataset)
 
-cols = [col for col in df.columns if col not in ['Persons']]
+cols = [col for col in df.columns if col not in ['Persons','AboveLimit']]
 
 data = df[cols]
 target = df['Persons']
+target_bin = df['AboveLimit']
 
-data_temp, data_test, target_temp, target_test = train_test_split(data, target, test_size = 0.20, random_state = 10)
-data_train, data_validation, target_train, target_validation = train_test_split(data_temp, target_temp, test_size = 0.16, random_state = 10)
 
+###############
+# Above Limit #
+###############
+
+data_temp, data_test, target_temp, target_test = train_test_split(data, target_bin, test_size = 0.20, random_state = 10)
+data_train, data_validation, target_train, target_validation = train_test_split(data_temp, target_temp, test_size = 0.25, random_state = 10)
+
+# lbfgs
+clf = MLPClassifier(activation='logistic', random_state=1, solver='lbfgs')
+pred = clf.fit(data_train,target_train).predict(data_validation)
+print("PROB lbfgs:",accuracy_score(pred,target_validation))
+# sgd
+clf = MLPClassifier(activation='logistic', random_state=1, solver='sgd')
+
+#####################
+# Amount of Persons #
+#####################
+
+#data_temp, data_test, target_temp, target_test = train_test_split(data, target, test_size = 0.20, random_state = 10)
+#data_train, data_validation, target_train, target_validation = train_test_split(data_temp, target_temp, test_size = 0.25, random_state = 10)
+
+
+
+
+
+
+"""
 # LinearSVC
 from sklearn.svm import LinearSVC
 svc_model  = LinearSVC(random_state=0)
@@ -44,6 +71,8 @@ print ("KNeighbors accuracy score : ",accuracy_score(target_validation,pred))
 ###
 from yellowbrick.classifier import ClassificationReport
 
+
+
 # GaussianNB
 visualizer = ClassificationReport(gnb,classes=["0 Persons","1 Persons","2 Persons","3 Persons"])
 visualizer.fit(data_train,target_train)
@@ -61,4 +90,5 @@ visualizer = ClassificationReport(neigh,classes=["0 Persons","1 Persons","2 Pers
 visualizer.fit(data_train,target_train)
 visualizer.score(data_validation,target_validation)
 g = visualizer.poof()
+"""
 
