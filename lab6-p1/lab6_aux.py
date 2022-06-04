@@ -1,7 +1,4 @@
-from cProfile import label
 from cmath import nan
-from functools import total_ordering
-from math import isnan
 from xmlrpc.client import boolean
 import pandas as pd
 from datetime import date, time
@@ -10,6 +7,7 @@ import matplotlib.pyplot as plt
 import collections
 
 
+# type of each feature in the dataframe 
 col_types = {
     "S1Temp": np.float64,
     "S2Temp": np.float64,
@@ -23,20 +21,39 @@ col_types = {
     "Persons": np.int64    
 }
 
+# globally stores the quartiles per feature in the given dataframe
 col_quartiles = {}
 
 
 def pre_processing(dataframe):
+    """Receives a dataframe, 
+    fills its empty values, 
+    removes rows with values that are considered "noisy" or "outliers", 
+    normalize its values using min-max normalization,
+    insert a binary collumn ('1' if there are more people in a room than the allowed amount) 
+    and finally returns the processed dataframe.
+
+    Args:
+        dataframe (DataFrame): dataframe of the imported .csv file
+
+    Returns:
+        DataFrame: returns the processed dataframe 
+    """
     df = check_missing_values(dataframe)
+  #  draw_graph(df,True)
     df = remove_noise(df)
     populate_quartiles(df)
     df = clean_outliers(df)
+#    draw_graph(df,True)
     df = min_max_normalization(df)
+#    draw_graph(df,True)
     df = add_binary_result(df)
+    draw_graph(df,True)
     return df
 
 
 def add_binary_result(dataframe):
+
     above_limit = []
     for row in range(len(dataframe)):
         if dataframe['Persons'][row] > 2:
@@ -47,9 +64,9 @@ def add_binary_result(dataframe):
     return dataframe
 
 
-####################
-# NOME DA CAIXINHA #
-####################
+#################
+# AUX FUNCTIONS #
+#################
 
 def check_missing_values(dataframe):
     # fill missing values with last valid value
@@ -75,7 +92,7 @@ def clean_outliers(dataframe):
     row_index = 0
     outlier_count = 0
     outlier_rows = []
-    cols = ["S1Temp","S1Light","S3Light"]
+    cols = [col for col in df.columns if col not in ["PIR1","PIR2","Persons"]]
     initlen = len(df)
     last_valid_value = {}
     while row_index < len(df):
@@ -94,16 +111,6 @@ def clean_outliers(dataframe):
     return df
 
 
-def z_score_normalization(dataframe):
-    df = dataframe
-    cols = [col for col in df.columns if col not in ["PIR1","PIR2","Persons"]]
-    for row in range(len(df)):
-        for col in cols:
-            # z_score = (x-mean)/std
-            z_score_value = (df[col][row] - col_quartiles[col]["mean"])/col_quartiles[col]["std"]
-            df.iloc[row, df.columns.get_loc(col)] = z_score_value
-    return df
-
 def min_max_normalization(dataframe):
     df = dataframe
     cols = [col for col in df.columns if col not in ["PIR1","PIR2","Persons"]]
@@ -114,11 +121,6 @@ def min_max_normalization(dataframe):
             df.iloc[row, df.columns.get_loc(col)] = min_max
     return df
 
-
-
-#################
-# AUX functions #
-#################
 
 def is_noise(dataframe, row_index, col_type):
     # if a value isn't valid (wrong type) removes row
@@ -133,7 +135,7 @@ def is_noise(dataframe, row_index, col_type):
     elif dataframe[col_type][row_index] < 0:
         print("Noise detected! Cause: negative value in row {} col {}".format(row_index,col_type))
         return True
-    # if movement is detected and the room is empty (ghostbusters!)
+    # if movement is detected and the room is empty
     elif "PIR" in col_type and dataframe[col_type][row_index] == 1 and dataframe["Persons"][row_index] == 0:
         print("Noise detected! Cause: movement detected in empty room in row {} ".format(row_index))
         return True
