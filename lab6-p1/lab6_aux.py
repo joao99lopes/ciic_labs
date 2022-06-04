@@ -48,7 +48,6 @@ def pre_processing(dataframe):
     df = min_max_normalization(df)
 #    draw_graph(df,True)
     df = add_binary_result(df)
-    draw_graph(df,True)
     return df
 
 

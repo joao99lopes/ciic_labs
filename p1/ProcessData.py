@@ -1,10 +1,11 @@
+from copyreg import pickle
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from yellowbrick.classifier import ClassificationReport
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 import pandas as pd
 import numpy as np
-
+import pickle
 class ProcessDataFrame:
     
     def __init__(self, filepath):
@@ -84,19 +85,19 @@ class ProcessDataFrame:
     def is_noise(self, dataframe, row_index, col_type):
         # if a value isn't valid (wrong type) removes row
         if not isinstance(dataframe[col_type][row_index].__class__, self.col_types[col_type].__class__):
-            print("Noise detected! Cause: invalid type in row {} col {}".format(row_index,col_type))
+#            print("Noise detected! Cause: invalid type in row {} col {}".format(row_index,col_type))
             return True
         # if PIR is not a binary value
         elif "PIR" in col_type and dataframe[col_type][row_index] not in (0,1):
-            print("Noise detected! Cause: invalid PIR value in row {} ".format(row_index))
+#            print("Noise detected! Cause: invalid PIR value in row {} ".format(row_index))
             return True
         # if a value is negative
         elif dataframe[col_type][row_index] < 0:
-            print("Noise detected! Cause: negative value in row {} col {}".format(row_index,col_type))
+#            print("Noise detected! Cause: negative value in row {} col {}".format(row_index,col_type))
             return True
         # if movement is detected and the room is empty
         elif "PIR" in col_type and dataframe[col_type][row_index] == 1 and dataframe["Persons"][row_index] == 0:
-            print("Noise detected! Cause: movement detected in empty room in row {} ".format(row_index))
+#            print("Noise detected! Cause: movement detected in empty room in row {} ".format(row_index))
             return True
         return False
 
@@ -126,7 +127,7 @@ class ProcessDataFrame:
         lower_limit = q1/outlier_limitation
         upper_limit = q3/(1/outlier_limitation) # multiplying was raising an error
         if value < lower_limit or value > upper_limit:
-            print("Outlier detected row {} col {} value {} upper {} lower {}".format(row_index,col,value,upper_limit,lower_limit))
+#            print("Outlier detected row {} col {} value {} upper {} lower {}".format(row_index,col,value,upper_limit,lower_limit))
             return True
         return False
 
@@ -159,21 +160,32 @@ class ProcessDataFrame:
         cols = [col for col in self.dataframe.columns if col not in ['Persons','AboveLimit']]
         data = self.dataframe[cols]
         target = self.dataframe[target_feature]
-        data_train, data_test, target_train, target_test = train_test_split(data, target, test_size = 0.20, random_state = 10)
 
         if target_feature == "AboveLimit":
-            clf = MLPClassifier(activation='logistic', alpha=1e-5, random_state=1, solver='lbfgs', hidden_layer_sizes=(4,2))
+            clf = pickle.load(open('exercise_1_model.sav', 'rb'))
+            print("\n################")
+            print("#  Exercise 1  #")
+            print("################")
         else:
-            clf = MLPClassifier(activation='logistic', alpha=1e-5, random_state=1, solver='lbfgs', hidden_layer_sizes=(4,1), max_iter=400)
+            clf = pickle.load(open('exercise_2_model.sav', 'rb'))
+            print("\n################")
+            print("#  Exercise 2  #")
+            print("################")
             
-        pred = clf.fit(data_train.values,target_train.values).predict(data_test.values)
-        print(target_feature,"PROB:",accuracy_score(target_test,pred))
-        print(target_feature,"MACRO_PRECISION:",precision_score(target_test,pred,average='macro'))
-        print(target_feature,"MACRO_RECALL:",recall_score(target_test,pred,average='macro'))
-        print(target_feature,"MACRO_F1:",f1_score(target_test,pred,average='macro'))
+        pred = clf.predict(data.values)
+        print("Accuracy:",accuracy_score(target,pred))
+        print("Precision")
+        print("\tmicro:",precision_score(target,pred,average='micro'))
+        print("\tmacro:",precision_score(target,pred,average='macro'))
+        print("Recall")
+        print("\tmicro:",recall_score(target,pred,average='micro'))
+        print("\tmacro:",recall_score(target,pred,average='macro'))
+        print("F1")
+        print("\tmicro:",f1_score(target,pred,average='micro'))
+        print("\tmacro:",f1_score(target,pred,average='macro'))
         visualizer = ClassificationReport(clf)
         if target_feature == "AboveLimit":
             visualizer = ClassificationReport(clf,classes=["Under limit","Above limit"])
-        visualizer.fit(data_train.values, target_train.values)
-        visualizer.score(data_test.values, target_test.values)
+        visualizer.fit(data.values, target.values)
+        visualizer.score(data.values, target.values)
         g = visualizer.poof()
