@@ -1,6 +1,7 @@
 from copyreg import pickle
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
 from sklearn.metrics import precision_score, recall_score, f1_score
-from yellowbrick.classifier import ClassificationReport
 import pandas as pd
 import numpy as np
 import pickle
@@ -183,7 +184,15 @@ class ProcessDataFrame:
         print("F1")
         print("\tmacro:",f1_score(target,pred,average='macro'))
         
-        visualizer = ClassificationReport(clf,classes=classes)
-        visualizer.fit(data.values, target.values)
-        visualizer.score(data.values, target.values)
-        g = visualizer.poof()
+        conf_matrix= confusion_matrix(y_true=target, y_pred=pred)
+        fig, ax = plt.subplots(figsize=(7.5, 7.5))
+        ax.matshow(conf_matrix, cmap=plt.cm.Blues, alpha=0.3)
+        for i in range(conf_matrix.shape[0]):
+            for j in range(conf_matrix.shape[1]):
+                ax.text(x=j, y=i,s=conf_matrix[i, j], va='center', ha='center', size='xx-large')
+        
+        plt.xlabel('Predictions', fontsize=18)
+        plt.ylabel('Actuals', fontsize=18)
+        plt.title('Confusion Matrix', fontsize=18)
+        plt.show()
+
