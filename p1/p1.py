@@ -6,15 +6,15 @@ import pandas as pd
 import pickle
 import os
 
-import lab6_aux
+import p1_aux
 
-dir_path = os.path.join(os.getcwd(), 'lab6-p1')
+dir_path = os.path.join(os.getcwd())
 file_name = 'Lab6Dataset.csv'
 file_path = os.path.join(dir_path, file_name)
 
 dataset = pd.read_csv(file_path, sep=',', index_col=[0,1])
 
-df = lab6_aux.pre_processing(dataset)
+df = p1_aux.pre_processing(dataset)
 
 cols = [col for col in df.columns if col not in ['Persons','AboveLimit']]
 
@@ -42,10 +42,10 @@ filename = 'exercise_1_model.sav'
 
 
 # DATA TESTING
-#clf = MLPClassifier(activation='logistic', alpha=1e-5, random_state=1, solver='lbfgs', hidden_layer_sizes=(4,2))
-#clf_fit = clf.fit(data_train.values,target_train.values)
-#pred = clf_fit.predict(data_test.values)
-#pickle.dump(clf_fit, open(filename, 'wb'))
+clf = MLPClassifier(activation='logistic', alpha=1e-5, random_state=1, solver='lbfgs', hidden_layer_sizes=(4,2))
+clf_fit = clf.fit(data_train.values,target_train.values)
+pred = clf_fit.predict(data_test.values)
+pickle.dump(clf_fit, open(filename, 'wb'))
 #print("PROB A:",accuracy_score(target_test,pred))
 #print("MACRO_PRECISION A:",precision_score(target_test,pred,average='macro'))
 #print("MACRO_RECALL A:",recall_score(target_test,pred,average='macro'))
@@ -77,10 +77,10 @@ filename = 'exercise_2_model.sav'
 #g = visualizer.poof()
 
 # DATA TESTING
-#clf = MLPClassifier(activation='logistic', alpha=1e-5, random_state=1, solver='lbfgs', hidden_layer_sizes=(4,4), max_iter=256)
-#clf_fit = clf.fit(data_train.values,target_train.values)
-#pred = clf_fit.predict(data_test.values)
-#pickle.dump(clf_fit, open(filename, 'wb'))
+clf = MLPClassifier(activation='logistic', alpha=1e-5, random_state=1, solver='lbfgs', hidden_layer_sizes=(4,4), max_iter=256)
+clf_fit = clf.fit(data_train.values,target_train.values)
+pred = clf_fit.predict(data_test.values)
+pickle.dump(clf_fit, open(filename, 'wb'))
 #print("PROB B:",accuracy_score(target_test,pred))
 #print("MACRO_PRECISION B:",precision_score(target_test,pred,average='macro'))
 #print("MACRO_RECALL B:",recall_score(target_test,pred,average='macro'))
