@@ -1,0 +1,17 @@
+cols:
+    T1
+    T2
+    T3
+    L1
+    L2
+    L3
+    CO2
+    PIR1
+    PIR2
+
+possible combos: 
+    - T1+T2+T3 (ou media)
+    - (L1+L2+L3)/Hora -> da para ver se ha alguem a noite -> 1 luz acesa AND hour in [6pm, 7am]
+    - CO2/Hora -> "aceleração" da variação de CO2
+    - PIR1 OR PIR2
+    - 
