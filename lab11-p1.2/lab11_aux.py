@@ -54,6 +54,7 @@ def pre_processing(dataframe):
     print("Fuzzy features added successfuly")
     df = add_binary_result(df)
     print("Binary results added successfuly")
+    print(col_quartiles)
     df = min_max_normalization(df)
     print("Data normalized successfuly")
 #    draw_graph(df,True)
@@ -82,6 +83,8 @@ def add_binary_result(dataframe):
 
 def add_fuzzy_features(dataframe):
     lights_on = []
+    acceleration = []
+    index = 1
     for row_index, row in dataframe.iterrows():
         lights = 0
         if (dataframe["S1Light"][row_index] > 100):
@@ -91,7 +94,18 @@ def add_fuzzy_features(dataframe):
         if (dataframe["S3Light"][row_index] > 200):
             lights +=1
         lights_on.append(lights)
+
+        if index <= 200:
+            acceleration.append((dataframe["CO2"][row_index] - dataframe["CO2"][0])/index)
+        else:
+            aux = (dataframe["CO2"][row_index] - dataframe.iloc[[row_index-200],[dataframe.columns.get_loc("CO2")]])/200
+            acceleration.append(aux.iat[0,0])
+        index += 1
+
     dataframe["LightsOn"] = lights_on
+    dataframe["CO2Acceleration"] = acceleration
+    populate_quartiles(dataframe)
+
     return dataframe
 
 
@@ -186,7 +200,7 @@ def is_outlier(dataframe, row_index, col):
 
 
 def populate_quartiles(dataframe):
-    cols = [col for col in dataframe.columns if col not in ['Time']]
+    cols = [col for col in dataframe.columns if col not in ['Time',"Persons","LightsOn"]]
     for col in cols:
         tmp = {}
         tmp["min"] = dataframe[col].min()

@@ -18,14 +18,15 @@ print(dataset)
 
 df = lab11_aux.pre_processing(dataset)
 
-cols = [col for col in df.columns if col not in ['Persons','AboveLimit']]
+#cols = [col for col in df.columns if col not in ['Persons','AboveLimit','Time']]
+cols = ["LightsOn","CO2Acceleration"]
 
 data = df[cols]
 target = df['Persons']
 target_bin = df['AboveLimit']
 
-#print(data)
-'''
+print(data)
+
 ##############
 # Exercise 1 #
 ##############
@@ -33,6 +34,7 @@ target_bin = df['AboveLimit']
 data_temp, data_test, target_temp, target_test = train_test_split(data, target_bin, test_size = 0.20, random_state = 10)
 data_train, data_validation, target_train, target_validation = train_test_split(data_temp, target_temp, test_size = 0.25, random_state = 10)
 filename = 'exercise_1_model.sav'
+file_path = os.path.join(dir_path, filename)
 
 # DATA VALIDATION
 clf = MLPClassifier(activation='logistic', alpha=1e-5, random_state=1, solver='lbfgs', hidden_layer_sizes=(4,2))
@@ -48,7 +50,7 @@ g = visualizer.poof()
 clf = MLPClassifier(activation='logistic', alpha=1e-5, random_state=1, solver='lbfgs', hidden_layer_sizes=(4,2))
 clf_fit = clf.fit(data_train.values,target_train.values)
 pred = clf_fit.predict(data_test.values)
-pickle.dump(clf_fit, open(filename, 'wb'))
+pickle.dump(clf_fit, open(file_path, 'wb'))
 #print("PROB A:",accuracy_score(target_test,pred))
 #print("MACRO_PRECISION A:",precision_score(target_test,pred,average='macro'))
 #print("MACRO_RECALL A:",recall_score(target_test,pred,average='macro'))
@@ -66,6 +68,7 @@ g = visualizer.poof()
 data_temp, data_test, target_temp, target_test = train_test_split(data, target, test_size = 0.20, random_state = 10)
 data_train, data_validation, target_train, target_validation = train_test_split(data_temp, target_temp, test_size = 0.25, random_state = 10)
 filename = 'exercise_2_model.sav'
+file_path = os.path.join(dir_path, filename)
 
 # DATA VALIDATION
 clf = MLPClassifier(activation='logistic', alpha=1e-5, random_state=1, solver='lbfgs', hidden_layer_sizes=(4,5), max_iter=256)
@@ -83,7 +86,7 @@ g = visualizer.poof()
 clf = MLPClassifier(activation='logistic', alpha=1e-5, random_state=1, solver='lbfgs', hidden_layer_sizes=(4,5), max_iter=256)
 clf_fit = clf.fit(data_train.values,target_train.values)
 pred = clf_fit.predict(data_test.values)
-pickle.dump(clf_fit, open(filename, 'wb'))
+pickle.dump(clf_fit, open(file_path, 'wb'))
 #print("PROB B:",accuracy_score(target_test,pred))
 #print("MACRO_PRECISION B:",precision_score(target_test,pred,average='macro'))
 #print("MACRO_RECALL B:",recall_score(target_test,pred,average='macro'))
@@ -92,7 +95,6 @@ visualizer = ClassificationReport(clf)
 visualizer.fit(data_train.values, target_train.values) # Fit the training data to the
 visualizer.score(data_test.values, target_test.values)
 g = visualizer.poof()
-'''
 
 '''
 # Aux to find the best neuron combination
