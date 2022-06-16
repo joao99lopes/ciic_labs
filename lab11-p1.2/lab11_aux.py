@@ -1,10 +1,12 @@
+from datetime import datetime
+import datetime as dt
 import numpy as np
 import matplotlib.pyplot as plt
 import collections
 
-
 # type of each feature in the dataframe 
 col_types = {
+    "Time": type(datetime.time),
     "S1Temp": np.float64,
     "S2Temp": np.float64,
     "S3Temp": np.float64,
@@ -35,29 +37,61 @@ def pre_processing(dataframe):
     Returns:
         DataFrame: returns the processed dataframe 
     """
-    df = check_missing_values(dataframe)
+    cols = [col for col in dataframe.columns if col not in ['Date']]
+    df = convert_time(dataframe[cols])
+    df = check_missing_values(df)
   #  draw_graph(df,True)
+    pre =len(df)
     df = remove_noise(df)
+    print("Noisy rows removed successfuly")
+    noise =len(df)
     populate_quartiles(df)
     df = clean_outliers(df)
+    print("Outliers removed successfuly")
+    print("YOOOOOOOOOOOOOOOO",pre,noise,len(df))
 #    draw_graph(df,True)
-    print(df)
-    df = min_max_normalization(df)
-    print(df)
-#    draw_graph(df,True)
+    df = add_fuzzy_features(df)
+    print("Fuzzy features added successfuly")
     df = add_binary_result(df)
+    print("Binary results added successfuly")
+    df = min_max_normalization(df)
+    print("Data normalized successfuly")
+#    draw_graph(df,True)
+    print(df)
     return df
 
+
+def convert_time(dataframe):
+    df = dataframe
+    for row_index, row in df.iterrows():
+        df.loc[row_index, "Time"] = datetime.strptime(df["Time"][row_index], "%H:%M:%S").time()
+    return df
 
 def add_binary_result(dataframe):
 
     above_limit = []
-    for row in range(len(dataframe)):
-        if dataframe['Persons'][row] > 2:
+
+    for row_index, row in dataframe.iterrows():
+        if dataframe['Persons'][row_index] > 2:
             above_limit.append(1)
         else:
             above_limit.append(0)
     dataframe["AboveLimit"] = above_limit
+    return dataframe
+
+
+def add_fuzzy_features(dataframe):
+    lights_on = []
+    for row_index, row in dataframe.iterrows():
+        lights = 0
+        if (dataframe["S1Light"][row_index] > 100):
+            lights +=1
+        if (dataframe["S2Light"][row_index] > 100):
+            lights +=1
+        if (dataframe["S3Light"][row_index] > 200):
+            lights +=1
+        lights_on.append(lights)
+    dataframe["LightsOn"] = lights_on
     return dataframe
 
 
@@ -73,56 +107,56 @@ def check_missing_values(dataframe):
 
 def remove_noise(dataframe):
     df = dataframe
-    row_index=0    
-    while (row_index < len(df)):
+    for row_index, row in dataframe.iterrows():
         for col in col_types.keys():
             # if a value is considered noise (negative value) its row is removed
             if is_noise(df, row_index, col):
-                df.drop([df.index[row_index]],inplace=True)
-                row_index-=1
-        row_index+=1
+#                print("INDEX",row_index,"\nROW",row)
+                df=df.drop([row_index])
+                break
     return df 
 
 
 def clean_outliers(dataframe):
     df = dataframe
-    row_index = 0
     outlier_count = 0
     outlier_rows = []
-    cols = [col for col in df.columns if col not in ["PIR1","PIR2","Persons"]]
+    cols = [col for col in df.columns if col not in ["PIR1","PIR2","Persons","Time"]]
     last_valid_value = {}
-    while row_index < len(df):
+    for row_index, row in dataframe.iterrows():
         for col in cols:
             if is_outlier(df, row_index, col):
-                df.drop([df.index[row_index]],inplace=True)
+                df = df.drop([row_index])
                 if row_index not in outlier_rows:
                     outlier_rows.append(row_index)
                 outlier_count +=1
                 populate_quartiles(df)
-                row_index-=1
+                break
             else:
                 last_valid_value[col] = df[col][row_index]
-        row_index+=1
     print("outliers: {} total: {}".format(outlier_count,len(outlier_rows)))
     return df
 
 
 def min_max_normalization(dataframe):
     df = dataframe
-    cols = [col for col in df.columns if col not in ["PIR1","PIR2","Persons"]]
-    for row in range(len(df)):
+    cols = [col for col in df.columns if col not in ["PIR1","PIR2","Persons","Time", "LightsOn", "AboveLimit"]]
+    for row_index, row in dataframe.iterrows():
         for col in cols:
             # min_max = (x-min)/(max-min)
-            min_max = (df[col][row] - col_quartiles[col]["min"])/(col_quartiles[col]["max"] - col_quartiles[col]["min"])
-            df.iloc[row, df.columns.get_loc(col)] = min_max
+            min_max = (df[col][row_index] - col_quartiles[col]["min"])/(col_quartiles[col]["max"] - col_quartiles[col]["min"])
+            df.loc[row_index, col] = min_max
     return df
 
 
 def is_noise(dataframe, row_index, col_type):
+#    print(row_index,col_type)
     # if a value isn't valid (wrong type) removes row
     if not isinstance(dataframe[col_type][row_index].__class__, col_types[col_type].__class__):
         print("Noise detected! Cause: invalid type in row {} col {}".format(row_index,col_type))
         return True
+    if col_type == "Time":
+        return False
     # if PIR is not a binary value
     elif "PIR" in col_type and dataframe[col_type][row_index] not in (0,1):
         print("Noise detected! Cause: invalid PIR value in row {} ".format(row_index))
@@ -152,7 +186,8 @@ def is_outlier(dataframe, row_index, col):
 
 
 def populate_quartiles(dataframe):
-    for col in dataframe.columns:
+    cols = [col for col in dataframe.columns if col not in ['Time']]
+    for col in cols:
         tmp = {}
         tmp["min"] = dataframe[col].min()
         tmp["q1"] = dataframe[col].quantile(0.25)

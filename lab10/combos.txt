@@ -9,9 +9,26 @@ cols:
     PIR1
     PIR2
 
+linguistic terms:
+    Li
+        L1 > 100 ON
+        L2 > 100 ON
+        L3 > 200 ON
+    CO2
+        CO2 UP -> CO2i - CO2(i-100) > 0
+        CO2 DOWN -> CO2i - CO2(i-100) < 0
+    PIRi
+        MOVEMENT -> 1
+        NO MOVEMENT -> 0
+
+
 possible combos: 
     - T1+T2+T3 (ou media)
     - (L1+L2+L3)/Hora -> da para ver se ha alguem a noite -> 1 luz acesa AND hour in [6pm, 7am]
     - CO2/Hora -> "aceleração" da variação de CO2
     - PIR1 OR PIR2
     - 
+
+used combos:
+    - amount of lights on (L1 > 100, L2 > 100, L3 > 200)
+    -

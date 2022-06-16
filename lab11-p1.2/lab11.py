@@ -6,15 +6,17 @@ import pandas as pd
 import pickle
 import os
 
-import lab6_aux
+import lab11_aux
 
 dir_path = os.path.join(os.getcwd(), 'lab6-p1.1')
 file_name = 'Lab6Dataset.csv'
 file_path = os.path.join(dir_path, file_name)
 
-dataset = pd.read_csv(file_path, sep=',', index_col=[0,1])
+dataset = pd.read_csv(file_path, sep=',')
 
-df = lab6_aux.pre_processing(dataset)
+print(dataset)
+
+df = lab11_aux.pre_processing(dataset)
 
 cols = [col for col in df.columns if col not in ['Persons','AboveLimit']]
 
@@ -22,7 +24,8 @@ data = df[cols]
 target = df['Persons']
 target_bin = df['AboveLimit']
 
-
+#print(data)
+'''
 ##############
 # Exercise 1 #
 ##############
@@ -89,7 +92,7 @@ visualizer = ClassificationReport(clf)
 visualizer.fit(data_train.values, target_train.values) # Fit the training data to the
 visualizer.score(data_test.values, target_test.values)
 g = visualizer.poof()
-
+'''
 
 '''
 # Aux to find the best neuron combination
