@@ -23,7 +23,7 @@ col_types = {
 col_quartiles = {}
 
 
-def pre_processing(dataframe):
+def pre_processing(dataframe, normalization=True):
     """Receives a dataframe, 
     fills its empty values, 
     removes rows with values that are considered "noisy" or "outliers", 
@@ -50,19 +50,17 @@ def pre_processing(dataframe):
     print("Outliers removed successfuly")
 #    print("YOOOOOOOOOOOOOOOO",pre,noise,len(df))
 #    draw_graph(df,True)
-#    df = add_fuzzy_features(df)
-    print("Fuzzy features added successfuly")
     df = add_binary_result(df)
     print("MAX1",df["S1Light"].max(), (100 - col_quartiles["S1Light"]["min"])/(col_quartiles["S1Light"]["max"] - col_quartiles["S1Light"]["min"]))
     print("MAX2",df["S2Light"].max(), (100 - col_quartiles["S2Light"]["min"])/(col_quartiles["S2Light"]["max"] - col_quartiles["S2Light"]["min"]))
     print("MAX3",df["S3Light"].max(), (200 - col_quartiles["S3Light"]["min"])/(col_quartiles["S3Light"]["max"] - col_quartiles["S3Light"]["min"]))
     print("Binary results added successfuly")
-    df = min_max_normalization(df)
-    print("Data normalized successfuly")
+    if (normalization):
+        df = min_max_normalization(df)
+        print("Data normalized successfuly")
 #    draw_graph(df,True)
     print(df)
     return df
-
 
 def convert_time(dataframe):
     df = dataframe
@@ -104,9 +102,9 @@ def add_fuzzy_features(dataframe):
             acceleration.append(aux.iat[0,0])
         index += 1
 
-    dataframe["LightsOn"] = lights_on
+#    dataframe["LightsOn"] = lights_on
     dataframe["CO2Acceleration"] = acceleration
-    populate_quartiles(dataframe)
+#    populate_quartiles(dataframe)
 
     return dataframe
 
