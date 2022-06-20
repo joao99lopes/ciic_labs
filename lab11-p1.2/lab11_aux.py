@@ -59,7 +59,7 @@ def pre_processing(dataframe, normalization=True):
         df = min_max_normalization(df)
         print("Data normalized successfuly")
 #    draw_graph(df,True)
-    print(df)
+#    print(df)
     return df
 
 def convert_time(dataframe):
@@ -82,18 +82,13 @@ def add_binary_result(dataframe):
 
 
 def add_fuzzy_features(dataframe):
-    lights_on = []
+    lights = []
     acceleration = []
+    time = []
     index = 1
     for row_index, row in dataframe.iterrows():
-        lights = 0
-        if (dataframe["S1Light"][row_index] > 100):
-            lights +=1
-        if (dataframe["S2Light"][row_index] > 100):
-            lights +=1
-        if (dataframe["S3Light"][row_index] > 200):
-            lights +=1
-        lights_on.append(lights)
+        
+        lights.append(max(0, (dataframe["S1Light"][row_index] + dataframe["S2Light"][row_index] + dataframe["S3Light"][row_index] -100)/3))
 
         if index <= 200:
             acceleration.append((dataframe["CO2"][row_index] - dataframe["CO2"][0])/index)
@@ -101,14 +96,26 @@ def add_fuzzy_features(dataframe):
             aux = (dataframe["CO2"][row_index] - dataframe.iloc[[row_index-200],[dataframe.columns.get_loc("CO2")]])/200
             acceleration.append(aux.iat[0,0])
         index += 1
+        
+        time.append(dataframe["Time"][row_index].hour + dataframe["Time"][row_index].minute/60)
 
-#    dataframe["LightsOn"] = lights_on
-    dataframe["CO2Acceleration"] = acceleration
+    dataframe["Lights"] = lights
+    dataframe["CO2Acceleration"] = normalize_co2_acceleration(acceleration)
+    dataframe["FloatTime"] = time
 #    populate_quartiles(dataframe)
 
     return dataframe
 
-
+def normalize_co2_acceleration(co2_acceleration):
+    res = []    
+    min_co2 = min(co2_acceleration)
+    max_co2 = max(co2_acceleration)
+    for i in range(len(co2_acceleration)):
+        if (co2_acceleration[i] > 0):
+            res.append(co2_acceleration[i]/abs(max_co2))
+        else:
+            res.append(co2_acceleration[i]/abs(min_co2))
+    return res
 #################
 # AUX FUNCTIONS #
 #################

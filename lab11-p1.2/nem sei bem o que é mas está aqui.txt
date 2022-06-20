@@ -1,0 +1,23 @@
+Antecedents (Inputs)
+    amount of lights on
+        Universe (ie, crisp value range): How many lights are on, from 0 to 3?
+        Fuzzy set (ie, fuzzy value range): 0, 1, 2, 3
+    CO2 increase rate
+        Universe: How much has the CO2 level increased, on a scale os -1 to 1?
+        Fuzzy set: decrease fast, decrease, stable, increase, increase fast
+Consequents (Outputs)
+    amount of persons in the room
+        Universe: Is the room overcrowded?
+        Fuzzy set: not overcrowded, overcrowded
+Rules
+    IF there are 3 lights on, THEN the room is overcrowded.
+    IF there are less than 3 lights on and it's nightime, THEN the room is not overcrowded.
+    IF there are less than 3 lights on and it's daytime and the CO2 variation is stable, THEN the room is not overcrowded.
+
+Usage
+    If I tell this controller that:
+        the number of lights on is [!!!!!], and
+        the daytime is [!!!!!], and
+        the CO2 variation is [!!!!!],
+    it would say that the room is:
+        [!!!!!]
