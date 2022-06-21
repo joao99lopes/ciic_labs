@@ -15,30 +15,103 @@ dataset = pd.read_csv(file_path, sep=',')
 
 df = lab11_aux.pre_processing(dataset, normalization=False)
 fuzzy_df = lab11_aux.add_fuzzy_features(df)
-cols = ["Lights", "FloatTime", "CO2Acceleration"]
+cols = ["Lights", "FloatTime", "CO2Acceleration", "S3Light"]
 fuzzy_data = fuzzy_df[cols]
 
 
 print((fuzzy_df))
 
+x_light3 = np.sort(fuzzy_data["S3Light"].to_numpy())
 x_lights = np.sort(fuzzy_data["Lights"].to_numpy())
 x_time = np.sort(fuzzy_df["FloatTime"].to_numpy())
 x_CO2_var = np.sort(fuzzy_data["CO2Acceleration"].to_numpy())
 
-lights_0 = fuzz.trimf(x_lights, [0, 0, 150])  
-lights_1 = fuzz.trimf(x_lights, [0, 150, 300])  
-lights_2 = fuzz.trimf(x_lights, [150, 300, 450])  
-lights_3 = fuzz.trimf(x_lights, [300, 450, 600])  
+lights = ctrl.Antecedent(np.arange(0, 1500, 1), 'light')
+daytime = ctrl.Antecedent(np.arange(0, 24, 1), 'daytime')
+weather = ctrl.Antecedent(np.arange(0, 500, 1), 'weather')
+output = ctrl.Consequent(np.arange(0, 2, 1), 'output')
 
-print("L1", np.average(np.sort(fuzzy_df.loc[fuzzy_df["S1Light"] > 100]["S1Light"].to_numpy())))
-print("L2", (df["S2Light"].to_numpy().max()))
-print("L3", (df["S3Light"].to_numpy().max()))
+weather_cloudy = fuzz.trimf(weather.universe, [0, 0, 170])
+weather_sunny = fuzz.trimf(weather.universe, [170, 500, 500])
 
-print("MININININININ", x_lights.min())
-print("MAXAXAXAXAXAX", x_lights.max())
+time_day = fuzz.trimf(daytime.universe, [7, 13, 19])
+time_before_morning = fuzz.trimf(daytime.universe, [0, 0, 7])
+time_evening = fuzz.trimf(daytime.universe, [19, 24, 24])
+
+lights_under_700 = fuzz.trimf(lights.universe, [0, 0, 700])  
+lights_over_700 = fuzz.trimf(lights.universe, [700, 1500, 1500])  
+lights_under_1000 = fuzz.trimf(lights.universe, [0, 0, 1000])  
+lights_over_1000 = fuzz.trimf(lights.universe, [1000, 1500, 1500])  
+
+lights["night less than three"] = lights_under_700
+lights["night more than three"] = lights_over_700
+lights["cloudy less than three"] = lights_under_700
+lights["cloudy more than three"] = lights_over_700
+lights["sunny less than three"] = lights_under_1000
+lights["sunny more than three"] = lights_over_1000
+
+daytime["day"] = time_day
+daytime["before morning"] = time_before_morning
+daytime["evening"] = time_evening
+
+weather["sunny"] = weather_sunny
+weather["cloudy"] = weather_cloudy
+
+output.automf(names=["under limit", "above limit"])
+#output["under limit"] = 0
+#output["above limit"] = 1
+
+#rule_weather_sunny = 
+rule1 = ctrl.Rule(antecedent=((daytime["before morning"] | daytime["evening"]) & lights["night less than three"]), consequent=output["under limit"], label="rule 1")
+rule2 = ctrl.Rule(antecedent=((daytime["before morning"] | daytime["evening"]) & lights["night more than three"]), consequent=output["above limit"], label="rule 2")
+rule3 = ctrl.Rule(antecedent=(daytime["day"] & weather["sunny"] & lights["sunny less than three"]), consequent=output["under limit"], label="rule 3")
+rule4 = ctrl.Rule(antecedent=(daytime["day"] & weather["sunny"] & lights["sunny more than three"]), consequent=output["above limit"], label="rule 4")
+rule5 = ctrl.Rule(antecedent=(daytime["day"] & weather["cloudy"] & lights["cloudy less than three"]), consequent=output["under limit"], label="rule 5")
+rule6 = ctrl.Rule(antecedent=(daytime["day"] & weather["cloudy"] & lights["cloudy more than three"]), consequent=output["above limit"], label="rule 6")
+
+system = ctrl.ControlSystem(rules=[rule1, rule2, rule3, rule4, rule5, rule6])
+room_control = ctrl.ControlSystemSimulation(system, flush_after_run = len(fuzzy_df))
 
 
+z = []
+for row_index, row in fuzzy_df.iterrows():
+    room_control.input["light"] = x_lights[row_index]
+    room_control.input["daytime"] = x_time[row_index]
+    room_control.input["weather"] = x_light3[row_index]
+    room_control.compute()
+    z.append(room_control.output["output"])
+    print(room_control.output["output"], fuzzy_df["AboveLimit"][row_index], fuzzy_df["Persons"][row_index])
 """
+
+tmp=[]
+for row_index, row in fuzzy_df.iterrows():
+    if fuzzy_df["Date"][row_index] not in tmp:
+        tmp.append(fuzzy_df["Date"][row_index])
+#        print(fuzzy_df)
+        aux_df = fuzzy_df.loc[(fuzzy_df["Date"]==fuzzy_df["Date"][row_index]) & (fuzzy_df["FloatTime"] > 7) & (fuzzy_df["FloatTime"] < 19) & (fuzzy_df["Persons"] == 3) & (fuzzy_df["Lights"] > 700)]
+        aux_df_weather = fuzzy_df.loc[(fuzzy_df["Date"]==fuzzy_df["Date"][row_index]) & (fuzzy_df["CO2"] < 400)]
+        l1max = aux_df["S1Light"].max() 
+        l2max = aux_df["S2Light"].max() 
+        l3max = aux_df["S3Light"].max() 
+        lmax = aux_df["Lights"].max() 
+
+#        print(aux_df)
+        weather="CLOUDY"
+        if aux_df_weather["S3Light"].max() > 160:
+            weather="SUNNY"
+            
+        l1mean = aux_df["S1Light"].mean() 
+        l2mean = aux_df["S2Light"].mean() 
+        l3mean = aux_df["S3Light"].mean()
+        lmean = aux_df["Lights"].mean()
+        print("Day:",fuzzy_df["Date"][row_index],"SIZEEE", len(aux_df))
+        print("Weather",weather)
+        print("\tL1\tMax: {}\tMean: {}".format(l1max,l1mean))        
+        print("\tL2\tMax: {}\tMean: {}".format(l2max,l2mean))        
+        print("\tL3\tMax: {}\tMean: {}".format(l3max,l3mean))        
+        print("\tSUM\tMax: {}\tMean: {}".format(lmax,lmean))        
+
+
 
 co2_decrease_fast = fuzz.trimf(x_CO2_var, [-1, -1, -0.5])
 co2_decrease = fuzz.trimf(x_CO2_var, [-1, -0.5, 0])
