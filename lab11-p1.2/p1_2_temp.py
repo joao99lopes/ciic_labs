@@ -14,187 +14,89 @@ file_path = os.path.join(dir_path, file_name)
 dataset = pd.read_csv(file_path, sep=',')
 
 df = lab11_aux.pre_processing(dataset, normalization=False)
-fuzzy_df = lab11_aux.add_fuzzy_features(df)
-cols = ["Lights", "FloatTime", "CO2Acceleration", "S3Light"]
-fuzzy_data = fuzzy_df[cols]
 
+light_1 = ctrl.Antecedent(np.arange(0, 551, 1), 'light_1')
+light_2 = ctrl.Antecedent(np.arange(0, 551, 1), 'light_2')
+light_3 = ctrl.Antecedent(np.arange(0, 601, 1), 'light_3')
+co2 = ctrl.Antecedent(np.arange(0, 1401, 5), 'co2')
+lights_12 = ctrl.Consequent(np.arange(0, 3, 1), 'lights_12')
+weather = ctrl.Consequent(np.arange(0, 2, 1), 'weather')
+light3_f = ctrl.Consequent(np.arange(0, 2, 1), 'light3_f')
 
-print((fuzzy_df))
+#NORMAL LIGHTS input
+light_1["off"] = fuzz.trimf(light_1.universe, [0, 0, 250])
+light_1["on"] = fuzz.trimf(light_1.universe, [240, 550, 550])
+light_2["off"] = fuzz.trimf(light_2.universe, [0, 0, 250])
+light_2["on"] = fuzz.trimf(light_2.universe, [240, 550, 550])
 
-x_light3 = np.sort(fuzzy_data["S3Light"].to_numpy())
-x_lights = np.sort(fuzzy_data["Lights"].to_numpy())
-x_time = np.sort(fuzzy_df["FloatTime"].to_numpy())
-x_CO2_var = np.sort(fuzzy_data["CO2Acceleration"].to_numpy())
+#S3LIGHT df and CO2 input for weather
+light_3["low (w)"] = fuzz.trimf(light_3.universe, [0, 0, 170])
+light_3["high (w)"] = fuzz.trimf(light_3.universe, [160, 600, 600])
+co2["lab empty"] = fuzz.trimf(co2.universe, [0, 0, 400])
+co2["lab not empty"] = fuzz.trimf(co2.universe, [360, 1400, 1400])
 
-lights = ctrl.Antecedent(np.arange(0, 1500, 1), 'light')
-daytime = ctrl.Antecedent(np.arange(0, 24, 1), 'daytime')
-weather = ctrl.Antecedent(np.arange(0, 500, 1), 'weather')
-output = ctrl.Consequent(np.arange(0, 2, 1), 'output')
+#S3LIGHT df and Weather input for Light3 final
+light_3["low"] = fuzz.trimf(light_3.universe, [0, 0, 200])
+light_3["medium"] = fuzz.trimf(light_3.universe, [190, 310, 310])
+light_3["high"] = fuzz.trimf(light_3.universe, [300, 600, 600])
 
-weather_cloudy = fuzz.trimf(weather.universe, [0, 0, 170])
-weather_sunny = fuzz.trimf(weather.universe, [170, 500, 500])
+#outputs
+lights_12["0"] = fuzz.trimf(lights_12.universe, [0, 0, 0])
+lights_12["1"] = fuzz.trimf(lights_12.universe, [1, 1, 1])
+lights_12["2"] = fuzz.trimf(lights_12.universe, [2, 2, 2])
+weather["cloudy"] = fuzz.trimf(weather.universe, [0, 0, 0])
+weather["sunny"] = fuzz.trimf(weather.universe, [1, 1, 1])
+light3_f["0"] = fuzz.trimf(light3_f.universe, [0, 0, 0])
+light3_f["1"] = fuzz.trimf(light3_f.universe, [1, 1, 1])
 
-time_day = fuzz.trimf(daytime.universe, [7, 13, 19])
-time_before_morning = fuzz.trimf(daytime.universe, [0, 0, 7])
-time_evening = fuzz.trimf(daytime.universe, [19, 24, 24])
+#lights12
+rule1 = ctrl.Rule(antecedent=((light_1["off"] & light_2["off"])), consequent=lights_12["0"], label="rule 1")
+rule2 = ctrl.Rule(antecedent=((light_1["on"] & light_2["off"]) | (light_1["off"] & light_2["on"])), consequent=lights_12["1"], label="rule 2")
+rule3 = ctrl.Rule(antecedent=((light_1["on"] & light_2["on"])), consequent=lights_12["2"], label="rule 3")
 
-lights_under_700 = fuzz.trimf(lights.universe, [0, 0, 700])  
-lights_over_700 = fuzz.trimf(lights.universe, [700, 1500, 1500])  
-lights_under_1000 = fuzz.trimf(lights.universe, [0, 0, 1000])  
-lights_over_1000 = fuzz.trimf(lights.universe, [1000, 1500, 1500])  
+lights12_ctrl = ctrl.ControlSystem([rule1, rule2, rule3])
+lights12 = ctrl.ControlSystemSimulation(lights12_ctrl)
 
-lights["night less than three"] = lights_under_700
-lights["night more than three"] = lights_over_700
-lights["cloudy less than three"] = lights_under_700
-lights["cloudy more than three"] = lights_over_700
-lights["sunny less than three"] = lights_under_1000
-lights["sunny more than three"] = lights_over_1000
+lights12.input['light_1'] = 245
+lights12.input['light_2'] = 400
 
-daytime["day"] = time_day
-daytime["before morning"] = time_before_morning
-daytime["evening"] = time_evening
+lights12.compute()
 
-weather["sunny"] = weather_sunny
-weather["cloudy"] = weather_cloudy
+print(lights12.output['lights_12'])
+lights_12.view(sim=lights12)
+input()
 
-output.automf(names=["under limit", "above limit"])
-#output["under limit"] = 0
-#output["above limit"] = 1
+#weather
+rule4 = ctrl.Rule(antecedent=((light_3["low (w)"] & co2["lab empty"])), consequent=weather["cloudy"], label="rule 4")
+rule5 = ctrl.Rule(antecedent=((light_3["high (w)"] & co2["lab empty"])), consequent=weather["sunny"], label="rule 5")
 
-#rule_weather_sunny = 
-rule1 = ctrl.Rule(antecedent=((daytime["before morning"] | daytime["evening"]) & lights["night less than three"]), consequent=output["under limit"], label="rule 1")
-rule2 = ctrl.Rule(antecedent=((daytime["before morning"] | daytime["evening"]) & lights["night more than three"]), consequent=output["above limit"], label="rule 2")
-rule3 = ctrl.Rule(antecedent=(daytime["day"] & weather["sunny"] & lights["sunny less than three"]), consequent=output["under limit"], label="rule 3")
-rule4 = ctrl.Rule(antecedent=(daytime["day"] & weather["sunny"] & lights["sunny more than three"]), consequent=output["above limit"], label="rule 4")
-rule5 = ctrl.Rule(antecedent=(daytime["day"] & weather["cloudy"] & lights["cloudy less than three"]), consequent=output["under limit"], label="rule 5")
-rule6 = ctrl.Rule(antecedent=(daytime["day"] & weather["cloudy"] & lights["cloudy more than three"]), consequent=output["above limit"], label="rule 6")
+weather_ctrl = ctrl.ControlSystem([rule4, rule5])
+weather_final = ctrl.ControlSystemSimulation(weather_ctrl)
 
-system = ctrl.ControlSystem(rules=[rule1, rule2, rule3, rule4, rule5, rule6])
-room_control = ctrl.ControlSystemSimulation(system, flush_after_run = len(fuzzy_df))
+weather_final.input['light_3'] = 150
+weather_final.input['co2'] = 300
 
+weather_final.compute()
 
-z = []
-for row_index, row in fuzzy_df.iterrows():
-    room_control.input["light"] = x_lights[row_index]
-    room_control.input["daytime"] = x_time[row_index]
-    room_control.input["weather"] = x_light3[row_index]
-    room_control.compute()
-    z.append(room_control.output["output"])
-    print(room_control.output["output"], fuzzy_df["AboveLimit"][row_index], fuzzy_df["Persons"][row_index])
-"""
+print(weather_final.output['weather'])
+weather.view(sim=weather_final)
+input()
 
-tmp=[]
-for row_index, row in fuzzy_df.iterrows():
-    if fuzzy_df["Date"][row_index] not in tmp:
-        tmp.append(fuzzy_df["Date"][row_index])
-#        print(fuzzy_df)
-        aux_df = fuzzy_df.loc[(fuzzy_df["Date"]==fuzzy_df["Date"][row_index]) & (fuzzy_df["FloatTime"] > 7) & (fuzzy_df["FloatTime"] < 19) & (fuzzy_df["Persons"] == 3) & (fuzzy_df["Lights"] > 700)]
-        aux_df_weather = fuzzy_df.loc[(fuzzy_df["Date"]==fuzzy_df["Date"][row_index]) & (fuzzy_df["CO2"] < 400)]
-        l1max = aux_df["S1Light"].max() 
-        l2max = aux_df["S2Light"].max() 
-        l3max = aux_df["S3Light"].max() 
-        lmax = aux_df["Lights"].max() 
+#Lights3_final
+rule6 = ctrl.Rule(antecedent=((light_3["low"] & weather_final.output["weather"] == "cloudy") | (light_3["low"] & weather["sunny"])), consequent=light3_f["off"], label="rule 6")
+rule7 = ctrl.Rule(antecedent=((light_3["medium"] & weather_final["cloudy"])), consequent=light3_f["on"], label="rule 7")
+rule8 = ctrl.Rule(antecedent=((light_3["medium"] & weather_final["sunny"])), consequent=light3_f["off"], label="rule 8")
+rule9 = ctrl.Rule(antecedent=((light_3["high"] & weather_final["cloudy"]) | (light_3["high"] & co2["sunny"])), consequent=light3_f["1"], label="rule 9")
 
-#        print(aux_df)
-        weather="CLOUDY"
-        if aux_df_weather["S3Light"].max() > 160:
-            weather="SUNNY"
-            
-        l1mean = aux_df["S1Light"].mean() 
-        l2mean = aux_df["S2Light"].mean() 
-        l3mean = aux_df["S3Light"].mean()
-        lmean = aux_df["Lights"].mean()
-        print("Day:",fuzzy_df["Date"][row_index],"SIZEEE", len(aux_df))
-        print("Weather",weather)
-        print("\tL1\tMax: {}\tMean: {}".format(l1max,l1mean))        
-        print("\tL2\tMax: {}\tMean: {}".format(l2max,l2mean))        
-        print("\tL3\tMax: {}\tMean: {}".format(l3max,l3mean))        
-        print("\tSUM\tMax: {}\tMean: {}".format(lmax,lmean))        
+light3_ctrl = ctrl.ControlSystem([rule6, rule7, rule8, rule9])
+light3_final = ctrl.ControlSystemSimulation(light3_ctrl)
 
+light3_final.input['light_3'] = 150
 
+light3_final.compute()
 
-co2_decrease_fast = fuzz.trimf(x_CO2_var, [-1, -1, -0.5])
-co2_decrease = fuzz.trimf(x_CO2_var, [-1, -0.5, 0])
-co2_stable = fuzz.trimf(x_CO2_var, [-0.3, 0, 0.3])
-co2_increase = fuzz.trimf(x_CO2_var, [0, 0.5, 1])
-co2_increase_fast = fuzz.trimf(x_CO2_var, [0.5, 1, 1])
+print(light3_final.output['weather'])
+light3_f.view(sim=light3_final)
+input()
 
-
-light_1 = ctrl.Antecedent(np.arange(0, 2, 1), 'light_1')
-light_2 = ctrl.Antecedent(np.arange(0, 2, 1), 'light_2')
-light_3 = ctrl.Antecedent(np.arange(0, 2, 1), 'light_3')
-daytime = ctrl.Antecedent(['Day', 'Night'], 'daytime')
-co2_acceleration = ctrl.Antecedent(np.arange(-1, 1, 0.01), 'co2_acceleration')
-output = ctrl.Consequent(["Under Limit", "Above Limit"], 'output')
-
-light_1["off"] = light1_off
-light_1["on"] = light1_on
-light_2["off"] = light2_off
-light_2["on"] = light2_on
-light_3["off"] = light3_off
-light_3["on"] = light3_on
-
-daytime.automf(names=["Day","Night"])
-"""
-"""
-n_lights["0"] = 0
-n_lights["1"] = 1
-n_lights["2"] = 2
-n_lights["3"] = 3
-
-daytime["Day"] = "Day"
-daytime["Night"] = "Night"
-"""
-"""
-output["Decreasing Fast"] = co2_decrease_fast
-output["Decreasing"] = co2_decrease
-output["Stable"] = co2_stable
-output["Increasing"] = co2_increase
-output["Increasing Fast"] = co2_increase_fast
-
-rule1 = ctrl.Rule(n_lights["3"], consequent=output["Above Limit"], label="rule 1")
-rule2 = ctrl.Rule((n_lights["0"] | n_lights["1"] | n_lights["2"]) & daytime["Night"], consequent=output["Under Limit"], label="rule 2")
-rule3 = ctrl.Rule((n_lights["0"] | n_lights["1"] | n_lights["2"]) & daytime["Day"] & co2_acceleration["Stable"], consequent=output["Under Limit"], label="rule 3")
-
-system = ctrl.ControlSystem(rules=[rule1, rule2, rule3])
-room_control = ctrl.ControlSystemSimulation(system)
-
-room_control.input["NLights"] = 3
-room_control.input["Daytime"] = "Day"
-room_control.input["CO2Acceleration"] = 0.4
-
-room_control.compute()
-"""
-'''
-fig, (ax0, ax1, ax2, ax3) = plt.subplots(nrows=4, figsize=(8, 9))
-
-ax0.plot(x_light1, light1_off, 'r', linewidth=1.5, label='Off')
-ax0.plot(x_light1, light1_on, 'g', linewidth=1.5, label='On')
-ax0.set_title('Light 1')
-ax0.legend()
-
-ax1.plot(x_light2, light2_off, 'r', linewidth=1.5, label='Off')
-ax1.plot(x_light2, light2_on, 'g', linewidth=1.5, label='On')
-ax1.set_title('Light 2')
-ax1.legend()
-
-ax2.plot(x_light3, light3_off, 'r', linewidth=1.5, label='Off')
-ax2.plot(x_light3, light3_on, 'g', linewidth=1.5, label='On')
-ax2.set_title('Light 3')
-ax2.legend()
-
-ax3.plot(x_CO2_var, co2_decrease_fast, 'r', linewidth=1.5, label='Decreasing Fast')
-ax3.plot(x_CO2_var, co2_decrease, 'm', linewidth=1.5, label='Decreasing')
-ax3.plot(x_CO2_var, co2_stable, 'g', linewidth=1.5, label='Stable')
-ax3.plot(x_CO2_var, co2_increase, 'b', linewidth=1.5, label='Increasing')
-ax3.plot(x_CO2_var, co2_increase_fast, 'c', linewidth=1.5, label='Increasing Fast')
-for ax in (ax0, ax1, ax2):
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.get_xaxis().tick_bottom()
-    ax.get_yaxis().tick_left()
-
-plt.tight_layout()
-plt.show()
-
-'''
+#Total_Lights
