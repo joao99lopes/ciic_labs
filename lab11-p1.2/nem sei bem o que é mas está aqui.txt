@@ -2,7 +2,7 @@ Antecedents (Inputs)
 
     amount of lights on
         Universe (ie, crisp value range): How many lights are on, from 0 to 3?
-        Fuzzy set (ie, fuzzy value range): 0, 1, 2, 3
+        4Fuzzy set (ie, fuzzy value range): 0, 1, 2, 3
    
     CO2 increase rate
         Universe: How much has the CO2 level increased, on a scale os -1 to 1?
