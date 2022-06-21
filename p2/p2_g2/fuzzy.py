@@ -4,16 +4,17 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 from skfuzzy import control as ctrl
+import sys
+import p2_aux
 
-import lab11_aux
-
-dir_path = os.path.join(os.getcwd(), 'lab6-p1.1')
-file_name = 'Lab6Dataset.csv'
+dir_path = os.path.join(os.getcwd())
+file_name = sys.argv[1]
 file_path = os.path.join(dir_path, file_name)
+
 
 dataset = pd.read_csv(file_path, sep=',')
 
-df = lab11_aux.pre_processing(dataset, normalization=False)
+df = p2_aux.pre_processing(dataset, normalization=False)
 
 cols = [col for col in df.columns if col not in ["Time", "Date", "S1Temp", "S2Temp", "S3Temp", "PIR1", "PIR2", "Persons", "AboveLimit"]]
 fuzzy_df = df[cols]
