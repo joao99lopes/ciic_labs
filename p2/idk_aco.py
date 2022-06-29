@@ -2,8 +2,11 @@ import pants
 import math
 import pandas as pd
 import numpy as np
+import os
 
-df = pd.read_excel(r"C:/Users/Aurora/Desktop/Project2_DistancesMatrix.xlsx")
+filename = "Project2_DistancesMatrix.xlsx"
+filepath = os.path.join(os.getcwd(), filename)
+df = pd.read_excel(filepath, index_col=[0])
 df = df.to_numpy() #converting to matrix ij = distance
 df = np.delete(df,0,1) #deleting row string names to only have the values
 
