@@ -2,7 +2,6 @@ from deap import creator, base, tools, algorithms
 import os
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import sys
 import time
 
@@ -60,14 +59,6 @@ toolbox.register("mate", tools.cxPartialyMatched)
 toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.2)
 toolbox.register("select", tools.selTournament, tournsize=3)
 toolbox.register("evaluate", get_path_distance)
-
-def saveStatistics(individual):
-    return individual.fitness.values
-
-stat = tools.Statistics(saveStatistics)
-stat.register("mean", np.mean)
-stat.register("min", np.min)
-stat.register("max", np.max)
 
 hof = tools.HallOfFame(1)
 result, log = algorithms.eaSimple(population=pop,
